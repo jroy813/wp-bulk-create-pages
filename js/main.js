@@ -3,11 +3,6 @@
     var testing = false;
     var testingCreate = false;
 
-    var url_array = [
-        "https://www.newpro.com/blog/p.180715000/warning-signs-that-you-need-a-new-roof/",
-        "https://www.newpro.com/blog/p.180630000/keep-your-home-cooler-with-energy-efficient-windows/"
-    ];
-
     var csvData = '';
     var totalCount = '';
     var processErrors = '';
@@ -73,6 +68,7 @@
         var website_url = $('.settings-view .website-url').val();
         var originalURI = $('.settings-view .original-uri').val();
         var newURI = $('.settings-view .new-uri').val();
+        var postType = $('.settings-view [name="post_type"]').val();
 
         var contentSelectors = {
             'title' : title,
@@ -95,18 +91,12 @@
         		'url_to_parse': website_url + value[originalURI],
         	};
         	$.post(ajax_object.ajax_url, data, function(data) {
-                parsePostContent(data, value, contentSelectors, website_url, value[originalURI], value[newURI], index);
+                parsePostContent(data, value, contentSelectors, website_url, value[originalURI], value[newURI], index, postType);
         	});
         });
     });
 
-    function parsePostContent(data, url, contentSelectors, website_url, originalURI, newURI, index){
-        // Attempt to fix img src="/" issues
-        // var pathArray = website_url.split( '/' );
-        // var protocol = pathArray[0];
-        // var host = pathArray[2];
-        // var url = protocol + '//' + host;
-        // data.replace('src="/', url + '/');
+    function parsePostContent(data, url, contentSelectors, website_url, originalURI, newURI, index, postType){
 
         // Add slug as the last source in url string
 
@@ -178,15 +168,15 @@
         }
 
         if( post_title.length <= 0 ) {
-            processErrors += 'Post Title Not Found.'
+            processErrors += '<br />Post Title Not Found.'
         }
 
 
         if( !testing ) {
-            createPost(post_array, index + 3, totalCount, processErrors);
+            createPost(post_array, index + 3, totalCount, processErrors, postType);
         }else{
             if( testingCreate ) {
-                createPost(post_array, index + 3, totalCount, processErrors);
+                createPost(post_array, index + 3, totalCount, processErrors, postType);
             }
             console.log('Create Post: ');
             console.log(post_array);
@@ -195,9 +185,9 @@
     }
 
     var createdPostID = ''
-    function createPost(post_array, realIndex, totalCountCSV, processErrors){
+    function createPost(post_array, realIndex, totalCountCSV, processErrors, postType){
         var createPost = new XMLHttpRequest();
-        createPost.open("POST", ajax_object.siteURL + "/wp-json/wp/v2/posts");
+        createPost.open("POST", ajax_object.siteURL + "/wp-json/wp/v2/" + postType);
         createPost.setRequestHeader("X-WP-Nonce", ajax_object.nonce);
         createPost.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
         createPost.send(JSON.stringify(post_array));
@@ -215,6 +205,7 @@
 
                     if( percentDone == 100 ) {
                         $('.main-column .progress').html('<h2 style="color: #18b118">Import Complete</h2>');
+                        $('.main-column .results-list').append('<br /><h2 style="color: #18b118">Import Complete</h2>');
                     }
 
                   $('.main-column .results-list').append('Successfully Created Post: ' + successResponse.title.raw + '<br />Post ID: ' + successResponse.id + '<br />');
@@ -222,7 +213,7 @@
                     $('.main-column .results-list').append('<div class="errors">' + processErrors + '</div>');
                     console.log(processErrors);
                 }
-                  $('.main-column .results-list').append('<a href="' + ajax_object.siteURL + '/wp-admin/post.php?post=' + successResponse.id + '&action=edit" target="_blank" class="edit-link">Edit</a> <a href="' + successResponse.link + '" class="view-link">View</a> <br /><br />');
+                  $('.main-column .results-list').append('<a href="' + ajax_object.siteURL + '/wp-admin/post.php?post=' + successResponse.id + '&action=edit" target="_blank" class="edit-link">Edit</a> <a href="' + successResponse.link + '" class="view-link" target="_blank">View</a> <br /><br />');
                   var data = {
               		'action': 'add_yoast_content',
                     'YoastPostID' : successResponse.id,

@@ -2,7 +2,7 @@ URL Handling/Cleaning
 
 Spot /category/ links and flag for non-creation
 Spot /page/ links and flag for non-creation
-Spot body with class "single-post" and flag for post creation
+Spot body with class "single-post" and flag for post creation - auto-detect option
 Remove querry url strings in beginning then de-dupe: example:
     /shop/cgi-bin/?C=D;O=A
     /shop/cgi-bin/?C=D;O=D
