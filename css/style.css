@@ -1,0 +1,43 @@
+.main-column{
+    padding: 25px 35px 25px 15px;
+}
+
+label, input, select{
+    margin-bottom: 10px;
+}
+
+button{
+    margin-top: 10px;
+}
+
+.status-bar-container{
+    position: relative;
+    height: 35px;
+    width: 100%;
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px solid #d6d6d6;
+    background: white;
+}
+
+.status-bar-container .status-bar{
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 0;
+    height: 100%;
+    background: #20ca20;
+    transition: ease all 0.5s;
+}
+
+.results-list .view-link{
+    margin-left: 10px;
+}
+
+.results-list .errors{
+    color: red;
+}
+
+.status-processing{
+    margin-bottom: 10px;
+}

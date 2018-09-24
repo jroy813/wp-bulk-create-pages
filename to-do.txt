@@ -1,0 +1,13 @@
+URL Handling/Cleaning
+
+Spot /category/ links and flag for non-creation
+Spot /page/ links and flag for non-creation
+Spot body with class "single-post" and flag for post creation
+Remove querry url strings in beginning then de-dupe: example:
+    /shop/cgi-bin/?C=D;O=A
+    /shop/cgi-bin/?C=D;O=D
+    /shop/cgi-bin/?C=M;O=A
+    /shop/cgi-bin/?C=M;O=D
+Find/Remove any uri's ending in .png, .jpg, or any other image
+
+Maybe create mode to import text and images only instead of all html

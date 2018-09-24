@@ -1,0 +1,47 @@
+<div class="settings-view">
+    <h2>CSV Settings:</h2>
+
+    <label>Choose Original URI Column (doesn't include domain name): </label><br />
+    <select class="header-select original-uri">
+    </select>
+
+    <br />
+
+    <label>Choose New URI Column (doesn't include domain name): </label><br />
+    <select class="header-select new-uri">
+    </select>
+
+    <br />
+
+    <h2>Content Settings:</h2>
+
+    <label>Current Website URL (as seen in google index/move-map): </label><br />
+    <input type="text" class="website-url" value="https://www.fulfilltopia.com/" />
+
+    <br />
+
+    <label>Choose Post Type: </label><br />
+    <select>
+        <option value="post">Post</option>
+        <option value="page">Page</option>
+    </select>
+
+    <br />
+
+    <label>Selector for Title:</label><br />
+    <input type="text" class="selector-title" value="h1" />
+
+    <br />
+
+    <label>Selector for content:</label><br />
+    <input type="text" class="selector-content" value=".entry-content" />
+
+    <br />
+
+    <label>Selector for date:</label><br />
+    <input type="text" class="selector-date" value=".post-meta time" />
+
+    <br />
+
+    <button class="generate-button button button-primary">Generate Pages</button>
+</div>
