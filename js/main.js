@@ -120,6 +120,8 @@
                 parsePostContent(data, value, contentSelectors, website_url, value[originalURI], value[newURI], index, postType, false);
         	});
         });
+
+        console.log(uniqueParentTaskArray);
     });
 
     function parsePostContent(data, url, contentSelectors, website_url, originalURI, newURI, index, postType, parentTaskBool){
@@ -131,7 +133,12 @@
         var totalCount = csvData.length;
         var html = $(data);
         var contentArea = $('.main-column');
-        var post_title = $(contentSelectors.title, html).text();
+        if( $(contentSelectors.title, html).length > 0 ) {
+            var post_title = $(contentSelectors.title, html).text();
+        }else{
+            var post_title = url;
+        }
+
 
         if( $(contentSelectors.content, html).length > 0 ) {
             var post_content = $(contentSelectors.content, html).html();
@@ -205,23 +212,21 @@
             processErrors += '<br />Post Title Not Found.'
         }
 
-        var isParent = false;
-
-        $.each( uniqueParentTaskArray, function(index, value){
-           if( finalNewURI == value['parentPage'] ) {
-               isParent = true;
-           }
-       });
-
-        if( isParent == false ) {
-            if( !testing ) {
+        if( parentTaskBool ===false ) {
+            var isParent = false;
+            $.each( uniqueParentTaskArray, function(index, value){
+               if( finalNewURI == value['parentPage'] ) {
+                   isParent = true;
+               }
+           });
+            if( isParent === false ) {
                 createPost(newSlug, post_array, index + 3, totalCount, processErrors, postType, parentTaskBool);
-            }else{
-                if( testingCreate ) {
-                    createPost(newSlug, post_array, index + 3, totalCount, processErrors, postType, parentTaskBool);
-                }
             }
+        }else{
+            createPost(newSlug, post_array, index + 3, totalCount, processErrors, postType, parentTaskBool);
         }
+
+
         processErrors = '';
     }
 
@@ -232,6 +237,8 @@
         createPost.setRequestHeader("X-WP-Nonce", ajax_object.nonce);
         createPost.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
         if( parentTaskBool === false ) {
+            console.log('parentTaskBool is false for');
+            console.log(post_array);
             // if url has parent
             var uriArray = newSlug.replace(/\/\s*$/,'').split('/');
             uriArray.shift();
@@ -245,11 +252,11 @@
                 $.each( uniqueParentTaskArray, function(index, value){
                    if( parentToFind == value['parentPage'] ) {
                        var parentID = value['parentID'];
-                       console.log(parentID);
+                       // console.log(parentID);
 
                        post_array['parent'] = parentID;
-                       console.log(uriArray);
-                       console.log(post_array);
+                       // console.log(uriArray);
+                       // console.log(post_array);
                    }
                 });
             }
@@ -260,7 +267,10 @@
             if (createPost.status == 201) {
                     var successResponse = JSON.parse(createPost.response);
 
-                    if( parentTaskBool ) {
+                    if( parentTaskBool === true ) {
+                        console.log('parentTaskBool is true for');
+                        console.log(post_array);
+
                         $.each( uniqueParentTaskArray, function(index, value){
                            if( post_array['slug'] == value['parentPage'] ) {
                                value['parentID'] = successResponse.id;
