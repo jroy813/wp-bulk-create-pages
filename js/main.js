@@ -108,19 +108,18 @@
         	};
         	$.post(ajax_object.ajax_url, data, function(data) {
                 parsePostContent(data, value['csvValue'], contentSelectors, website_url, value['csvValue'][originalURI], value['csvValue'][newURI], index, postType, true);
-                // console.log(newStuff);
         	});
         });
 
-        // $.each( csvData, function(index, value){
-        //     var data = {
-        // 		'action': 'parse_url_content',
-        // 		'url_to_parse': website_url + value[originalURI],
-        // 	};
-        // 	$.post(ajax_object.ajax_url, data, function(data) {
-        //         parsePostContent(data, value, contentSelectors, website_url, value[originalURI], value[newURI], index, postType, false);
-        // 	});
-        // });
+        $.each( csvData, function(index, value){
+            var data = {
+        		'action': 'parse_url_content',
+        		'url_to_parse': website_url + value[originalURI],
+        	};
+        	$.post(ajax_object.ajax_url, data, function(data) {
+                parsePostContent(data, value, contentSelectors, website_url, value[originalURI], value[newURI], index, postType, false);
+        	});
+        });
     });
 
     function parsePostContent(data, url, contentSelectors, website_url, originalURI, newURI, index, postType, parentTaskBool){
@@ -150,8 +149,12 @@
             var post_date_raw = '';
         }
 
-        if( newURI.length > 0 ) {
-            var newSlug = removeTrailingSlash( newURI );
+        if( typeof(newURI) != "undefined" ) {
+            if( newURI.length > 0 ) {
+                var newSlug = removeTrailingSlash( newURI );
+            }else{
+                var newSlug = removeTrailingSlash ( originalURI );
+            }
         }else{
             var newSlug = removeTrailingSlash ( originalURI );
         }
@@ -202,23 +205,55 @@
             processErrors += '<br />Post Title Not Found.'
         }
 
+        var isParent = false;
 
-        if( !testing ) {
-            createPost(post_array, index + 3, totalCount, processErrors, postType, parentTaskBool);
-        }else{
-            if( testingCreate ) {
-                createPost(post_array, index + 3, totalCount, processErrors, postType, parentTaskBool);
+        $.each( uniqueParentTaskArray, function(index, value){
+           if( finalNewURI == value['parentPage'] ) {
+               isParent = true;
+           }
+       });
+
+        if( isParent == false ) {
+            if( !testing ) {
+                createPost(newSlug, post_array, index + 3, totalCount, processErrors, postType, parentTaskBool);
+            }else{
+                if( testingCreate ) {
+                    createPost(newSlug, post_array, index + 3, totalCount, processErrors, postType, parentTaskBool);
+                }
             }
         }
         processErrors = '';
     }
 
     var createdPostID = ''
-    function createPost(post_array, realIndex, totalCountCSV, processErrors, postType, parentTaskBool){
+    function createPost(newSlug, post_array, realIndex, totalCountCSV, processErrors, postType, parentTaskBool){
         var createPost = new XMLHttpRequest();
         createPost.open("POST", ajax_object.siteURL + "/wp-json/wp/v2/" + postType);
         createPost.setRequestHeader("X-WP-Nonce", ajax_object.nonce);
         createPost.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+        if( parentTaskBool === false ) {
+            // if url has parent
+            var uriArray = newSlug.replace(/\/\s*$/,'').split('/');
+            uriArray.shift();
+            if( uriArray.length > 1 ) {
+                if( uriArray.length == 2 ) {
+                    var parentToFind = uriArray[0];
+                }else{
+                    var parentToFind = uriArray[uriArray.length - 2];
+                }
+                // console.log(parentToFind);
+                $.each( uniqueParentTaskArray, function(index, value){
+                   if( parentToFind == value['parentPage'] ) {
+                       var parentID = value['parentID'];
+                       console.log(parentID);
+
+                       post_array['parent'] = parentID;
+                       console.log(uriArray);
+                       console.log(post_array);
+                   }
+                });
+            }
+        }
         createPost.send(JSON.stringify(post_array));
         createPost.onreadystatechange = function() {
           if (createPost.readyState == 4) {
@@ -231,8 +266,7 @@
                                value['parentID'] = successResponse.id;
                            }
                         });
-                       console.log(uniqueParentTaskArray);
-                    }
+                   }
                     // console.log(successResponse);
                     var percentDone = ((realIndex / totalCountCSV) * 40) + 60;
                     var previousPercent = $('.main-column .status-bar').attr('data-percent');
