@@ -3,6 +3,8 @@
     var testing = false;
     var testingCreate = false;
 
+    var newStuff = [];
+    var uniqueParentTaskArray = [];
     var csvData = '';
     var totalCount = '';
     var processErrors = '';
@@ -24,10 +26,11 @@
                     $('.main-column').html('');
                     $('.main-column').load(ajax_object.pluginURL + "view/settings.html");
 
+
                     setTimeout(function(){
                         $.each( spreadsheetHeaders, function(key, value){
                             var selected = '';
-                            if( value == 'URI' || value == 'uri' || value == 'Original URI' ){
+                            if( value == 'URI' || value == 'uri' || value == 'Original URI' || value == 'url' ){
                                 selected = 'selected';
                             }else{
                                 selected = '';
@@ -37,15 +40,17 @@
                     }, 200);
 
                     setTimeout(function(){
-                        $.each( spreadsheetHeaders, function(key, value){
-                            var selected = '';
-                            if( value.indexOf('Recommended URL') != -1 ){
-                                selected = 'selected';
-                            }else{
-                                selected = '';
-                            }
-                            $('<option value="' + value + '" ' + selected + ' >' + value + '</option>').appendTo($('.new-uri'));
-                        });
+                        if( spreadsheetHeaders.length > 1 ) {
+                            $.each( spreadsheetHeaders, function(key, value){
+                                var selected = '';
+                                if( value.indexOf('Recommended URL') != -1 ){
+                                    selected = 'selected';
+                                }else{
+                                    selected = '';
+                                }
+                                $('<option value="' + value + '" ' + selected + ' >' + value + '</option>').appendTo($('.new-uri'));
+                            });
+                        }
                     }, 200);
                 }
         	},
@@ -77,26 +82,48 @@
         }
 
         // Create Parent Page Array First
+        var parentTaskArray = [];
         $.each( csvData, function(index, value){
-            // If url has 2 slashes grab the 2nd to last source add into Array
-
-            // Remove Dupes
-
+            var ogURI = removeTrailingSlash(value[originalURI]);
+            var uriArray = ogURI.replace(/\/\s*$/,'').split('/');
+            uriArray.shift();
+            if( uriArray.length > 1 ) {
+                // If url has 2 slashes grab the 2nd to last source add into Array
+                if( uriArray.length == 2 ) {
+                    var parentPage = uriArray[0];
+                } else {
+                    var parentPage = uriArray[uriArray.length - 2];
+                }
+                parentTaskArray.push( {parentPage:parentPage,csvValue:value} );
+            }
             // Add parent pages and store ID's into associative arrray
         });
 
-        $.each( csvData, function(index, value){
+        uniqueParentTaskArray = removeDuplicates( parentTaskArray );
+
+        $.each( uniqueParentTaskArray, function(index, value){
             var data = {
         		'action': 'parse_url_content',
-        		'url_to_parse': website_url + value[originalURI],
+        		'url_to_parse': website_url + value['csvValue'][originalURI],
         	};
         	$.post(ajax_object.ajax_url, data, function(data) {
-                parsePostContent(data, value, contentSelectors, website_url, value[originalURI], value[newURI], index, postType);
+                parsePostContent(data, value['csvValue'], contentSelectors, website_url, value['csvValue'][originalURI], value['csvValue'][newURI], index, postType, true);
+                // console.log(newStuff);
         	});
         });
+
+        // $.each( csvData, function(index, value){
+        //     var data = {
+        // 		'action': 'parse_url_content',
+        // 		'url_to_parse': website_url + value[originalURI],
+        // 	};
+        // 	$.post(ajax_object.ajax_url, data, function(data) {
+        //         parsePostContent(data, value, contentSelectors, website_url, value[originalURI], value[newURI], index, postType, false);
+        // 	});
+        // });
     });
 
-    function parsePostContent(data, url, contentSelectors, website_url, originalURI, newURI, index, postType){
+    function parsePostContent(data, url, contentSelectors, website_url, originalURI, newURI, index, postType, parentTaskBool){
 
         // Add slug as the last source in url string
 
@@ -117,9 +144,13 @@
         var featured_image = $('.post-content img', html).attr('src');
         var meta_title = html.filter('title').text();
         var meta_description = html.filter('meta[name=description]').attr('content');
-        var post_date_raw = $(contentSelectors.date, html).text();
+        if( $(contentSelectors.date, html).length > 0 ) {
+            var post_date_raw = $(contentSelectors.date, html).text();
+        } else {
+            var post_date_raw = '';
+        }
 
-        if( newURI ) {
+        if( newURI.length > 0 ) {
             var newSlug = removeTrailingSlash( newURI );
         }else{
             var newSlug = removeTrailingSlash ( originalURI );
@@ -129,7 +160,7 @@
         var finalNewURI = uriArray.slice(-1)[0];
 
         // Format date for data insertion. If no date, throw errow.
-        if( contentSelectors.date ) {
+        if( contentSelectors.date && post_date_raw.length > 0 ) {
             if(Date.parse(post_date_raw)){
                 var post_date = new Date(post_date_raw).toISOString();
             }else{
@@ -173,19 +204,17 @@
 
 
         if( !testing ) {
-            createPost(post_array, index + 3, totalCount, processErrors, postType);
+            createPost(post_array, index + 3, totalCount, processErrors, postType, parentTaskBool);
         }else{
             if( testingCreate ) {
-                createPost(post_array, index + 3, totalCount, processErrors, postType);
+                createPost(post_array, index + 3, totalCount, processErrors, postType, parentTaskBool);
             }
-            console.log('Create Post: ');
-            console.log(post_array);
         }
         processErrors = '';
     }
 
     var createdPostID = ''
-    function createPost(post_array, realIndex, totalCountCSV, processErrors, postType){
+    function createPost(post_array, realIndex, totalCountCSV, processErrors, postType, parentTaskBool){
         var createPost = new XMLHttpRequest();
         createPost.open("POST", ajax_object.siteURL + "/wp-json/wp/v2/" + postType);
         createPost.setRequestHeader("X-WP-Nonce", ajax_object.nonce);
@@ -194,7 +223,16 @@
         createPost.onreadystatechange = function() {
           if (createPost.readyState == 4) {
             if (createPost.status == 201) {
-                var successResponse = JSON.parse(createPost.response);
+                    var successResponse = JSON.parse(createPost.response);
+
+                    if( parentTaskBool ) {
+                        $.each( uniqueParentTaskArray, function(index, value){
+                           if( post_array['slug'] == value['parentPage'] ) {
+                               value['parentID'] = successResponse.id;
+                           }
+                        });
+                       console.log(uniqueParentTaskArray);
+                    }
                     // console.log(successResponse);
                     var percentDone = ((realIndex / totalCountCSV) * 40) + 60;
                     var previousPercent = $('.main-column .status-bar').attr('data-percent');
@@ -211,7 +249,6 @@
                   $('.main-column .results-list').append('Successfully Created Post: ' + successResponse.title.raw + '<br />Post ID: ' + successResponse.id + '<br />');
                 if( processErrors.length > 0 ) {
                     $('.main-column .results-list').append('<div class="errors">' + processErrors + '</div>');
-                    console.log(processErrors);
                 }
                   $('.main-column .results-list').append('<a href="' + ajax_object.siteURL + '/wp-admin/post.php?post=' + successResponse.id + '&action=edit" target="_blank" class="edit-link">Edit</a> <a href="' + successResponse.link + '" class="view-link" target="_blank">View</a> <br /><br />');
                   var data = {
@@ -220,9 +257,10 @@
                     'YoastPost_title' : post_array.meta_title,
                     'YoastPost_desc' : post_array.meta_description
               	};
-              	$.post(ajax_object.ajax_url, data, function(response) {
+              	// $.post(ajax_object.ajax_url, data, function(response) {
                       // parsePostContent(response);
-              	});
+              	// });
+                return successResponse.id;
             } else {
                 // $('.main-column .results-list').append('<div class="errors">Error: ' + createPost.response + '</div><br /><br />');
             }
@@ -232,6 +270,16 @@
 
     function removeTrailingSlash( url ) {
         return url.replace(/\/$/, "");
+    }
+
+    function removeDuplicates(arr){
+        var unique_array = []
+        for(var i = 0;i < arr.length; i++){
+            if(unique_array.indexOf(arr[i]) == -1){
+                unique_array.push(arr[i])
+            }
+        }
+        return unique_array
     }
 
 })( jQuery );

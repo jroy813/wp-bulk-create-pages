@@ -1,7 +1,7 @@
 <?php
 /*
-Plugin Name: Jroy's Content Move
-Description: Pretty Fast
+Plugin Name: Bulk Create Pages
+Description: Upload a CSV of external website URI's and convert to wordpress pages/posts by specifying content selectors.
 Author: Justin Roy
 Version: 1
 */
@@ -9,7 +9,7 @@ Version: 1
 // Create Admin Menu Item Under Tools
 add_action('admin_menu', 'create_tools_submenu');
 function create_tools_submenu() {
-    add_management_page( 'Content Creator', 'Jroy\'s Content Creator', 'manage_options', 'content-creator', 'generate_page_content' );
+    add_management_page( 'Content Creator', 'Bulk Create Pages', 'manage_options', 'content-creator', 'generate_page_content' );
 }
 function generate_page_content() {
     require_once 'view/home.php';

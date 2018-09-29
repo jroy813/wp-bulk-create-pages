@@ -3,12 +3,14 @@
 
     <label>Choose Original URI Column (doesn't include domain name): </label><br />
     <select class="header-select original-uri">
+        <option value="">Select a column</option>
     </select>
 
     <br />
 
     <label>Choose New URI Column (doesn't include domain name): </label><br />
     <select class="header-select new-uri">
+        <option value="">Select a column</option>
     </select>
 
     <br />
@@ -16,14 +18,14 @@
     <h2>Content Settings:</h2>
 
     <label>Current Website URL (as seen in google index/move-map): </label><br />
-    <input type="text" class="website-url" value="" />
+    <input type="text" class="website-url" value="http://fulfilltopia.com" />
 
     <br />
 
     <label>Choose Post Type: </label><br />
     <select name="post_type">
         <option value="posts">Post</option>
-        <option value="pages">Page</option>
+        <option value="pages" selected>Page</option>
     </select>
 
     <br />
