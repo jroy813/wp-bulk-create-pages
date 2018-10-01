@@ -100,28 +100,36 @@
         });
 
         uniqueParentTaskArray = removeDuplicates( parentTaskArray );
-
-        $.each( uniqueParentTaskArray, function(index, value){
-            var data = {
-        		'action': 'parse_url_content',
-        		'url_to_parse': website_url + value['csvValue'][originalURI],
-        	};
-        	$.post(ajax_object.ajax_url, data, function(data) {
-                parsePostContent(data, value['csvValue'], contentSelectors, website_url, value['csvValue'][originalURI], value['csvValue'][newURI], index, postType, true);
-        	});
-        });
+        console.log(uniqueParentTaskArray);
 
         $.each( csvData, function(index, value){
-            var data = {
-        		'action': 'parse_url_content',
-        		'url_to_parse': website_url + value[originalURI],
-        	};
-        	$.post(ajax_object.ajax_url, data, function(data) {
-                parsePostContent(data, value, contentSelectors, website_url, value[originalURI], value[newURI], index, postType, false);
-        	});
+            var csvDataOG = value;
+            $.each( uniqueParentTaskArray, function(index, value){
+                var urlToCheck = removeLeadingSlash( csvDataOG[originalURI] );
+                var urlToCheck = removeTrailingSlash( urlToCheck );
+                var uriArray = urlToCheck.replace(/\/\s*$/,'').split('/');
+                var finalNewURI = uriArray.slice(-1)[0];
+                if( finalNewURI == value['parentPage'] ) {
+                    var data = {
+                		'action': 'parse_url_content',
+                		'url_to_parse': website_url + csvDataOG[originalURI],
+                	};
+                	$.post(ajax_object.ajax_url, data, function(data) {
+                        parsePostContent(data, csvDataOG, contentSelectors, website_url, csvDataOG[originalURI], csvDataOG[newURI], index, postType, true);
+                	});
+                }
+            });
         });
 
-        console.log(uniqueParentTaskArray);
+        // $.each( csvData, function(index, value){
+        //     var data = {
+        // 		'action': 'parse_url_content',
+        // 		'url_to_parse': website_url + value[originalURI],
+        // 	};
+        // 	$.post(ajax_object.ajax_url, data, function(data) {
+        //         // parsePostContent(data, value, contentSelectors, website_url, value[originalURI], value[newURI], index, postType, false);
+        // 	});
+        // });
     });
 
     function parsePostContent(data, url, contentSelectors, website_url, originalURI, newURI, index, postType, parentTaskBool){
@@ -314,6 +322,10 @@
 
     function removeTrailingSlash( url ) {
         return url.replace(/\/$/, "");
+    }
+
+    function removeLeadingSlash( url ) {
+        return url.replace(/^\/+/g, '');
     }
 
     function removeDuplicates(arr){
