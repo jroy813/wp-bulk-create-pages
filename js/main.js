@@ -99,8 +99,9 @@
             // Add parent pages and store ID's into associative arrray
         });
 
-        uniqueParentTaskArray = removeDuplicates( parentTaskArray );
+        console.log(uniqueParentTaskArray);
 
+        uniqueParentTaskArray = removeDuplicates( parentTaskArray );
         $.each( uniqueParentTaskArray, function(index, value){
             var data = {
         		'action': 'parse_url_content',
@@ -111,17 +112,19 @@
         	});
         });
 
-        $.each( csvData, function(index, value){
-            var data = {
-        		'action': 'parse_url_content',
-        		'url_to_parse': website_url + value[originalURI],
-        	};
-        	$.post(ajax_object.ajax_url, data, function(data) {
-                parsePostContent(data, value, contentSelectors, website_url, value[originalURI], value[newURI], index, postType, false);
-        	});
-        });
-
         console.log(uniqueParentTaskArray);
+
+        // $.each( csvData, function(index, value){
+        //     var data = {
+        // 		'action': 'parse_url_content',
+        // 		'url_to_parse': website_url + value[originalURI],
+        // 	};
+        // 	// $.post(ajax_object.ajax_url, data, function(data) {
+        //     //     parsePostContent(data, value, contentSelectors, website_url, value[originalURI], value[newURI], index, postType, false);
+        // 	// });
+        // });
+
+
     });
 
     function parsePostContent(data, url, contentSelectors, website_url, originalURI, newURI, index, postType, parentTaskBool){
@@ -237,8 +240,6 @@
         createPost.setRequestHeader("X-WP-Nonce", ajax_object.nonce);
         createPost.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
         if( parentTaskBool === false ) {
-            console.log('parentTaskBool is false for');
-            console.log(post_array);
             // if url has parent
             var uriArray = newSlug.replace(/\/\s*$/,'').split('/');
             uriArray.shift();
@@ -248,15 +249,11 @@
                 }else{
                     var parentToFind = uriArray[uriArray.length - 2];
                 }
-                // console.log(parentToFind);
                 $.each( uniqueParentTaskArray, function(index, value){
                    if( parentToFind == value['parentPage'] ) {
                        var parentID = value['parentID'];
-                       // console.log(parentID);
 
                        post_array['parent'] = parentID;
-                       // console.log(uriArray);
-                       // console.log(post_array);
                    }
                 });
             }
@@ -268,8 +265,6 @@
                     var successResponse = JSON.parse(createPost.response);
 
                     if( parentTaskBool === true ) {
-                        console.log('parentTaskBool is true for');
-                        console.log(post_array);
 
                         $.each( uniqueParentTaskArray, function(index, value){
                            if( post_array['slug'] == value['parentPage'] ) {
