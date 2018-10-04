@@ -1,13 +1,15 @@
-URL Handling/Cleaning
+array(
+	array(
+		'parentPage' => 'parent-slug',
+		'parentID' => '140',
+		'children' => array(
+			130,
+			141,
+			142
+		)
+	)
+)
 
-Spot /category/ links and flag for non-creation
-Spot /page/ links and flag for non-creation
-Spot body with class "single-post" and flag for post creation - auto-detect option
-Remove querry url strings in beginning then de-dupe: example:
-    /shop/cgi-bin/?C=D;O=A
-    /shop/cgi-bin/?C=D;O=D
-    /shop/cgi-bin/?C=M;O=A
-    /shop/cgi-bin/?C=M;O=D
-Find/Remove any uri's ending in .png, .jpg, or any other image
-
-Maybe create mode to import text and images only instead of all html
+foreach parent item in Array
+	loop through children ID's and
+	send an update to the page with the parent ID.

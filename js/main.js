@@ -11,7 +11,7 @@
     $('.jroy-button').click(function(){
         $('.main-column input[type=file]').parse({
             config: {
-        		// base config to use for each file
+                // base config to use for each file
                 header: true,
                 complete: function(results, file) {
                     var spreadsheetRow1 = results.data[0];
@@ -19,8 +19,8 @@
                     var spreadsheetHeaders = [];
                     for (var property in spreadsheetRow1) {
                         if (spreadsheetRow1.hasOwnProperty(property)) {
-                                spreadsheetHeaders.push(property);
-                            }
+                            spreadsheetHeaders.push(property);
+                        }
                     }
 
                     $('.main-column').html('');
@@ -53,13 +53,13 @@
                         }
                     }, 200);
                 }
-        	},
-        	before: function(file, inputElem){
-        	},
-        	error: function(err, file, inputElem, reason){
-        	},
-        	complete: function(){
-        	}
+            },
+            before: function(file, inputElem){
+            },
+            error: function(err, file, inputElem, reason){
+            },
+            complete: function(){
+            }
         });
 
 
@@ -94,49 +94,28 @@
                 } else {
                     var parentPage = uriArray[uriArray.length - 2];
                 }
-                parentTaskArray.push( {parentPage:parentPage,csvValue:value} );
+                var childrenArray = [];
+                parentTaskArray.push( {parentPage:parentPage, children:childrenArray} );
             }
-            // Add parent pages and store ID's into associative arrray
         });
 
         uniqueParentTaskArray = removeDuplicates( parentTaskArray );
         console.log(uniqueParentTaskArray);
 
         $.each( csvData, function(index, value){
-            var csvDataOG = value;
-            $.each( uniqueParentTaskArray, function(index, value){
-                var urlToCheck = removeLeadingSlash( csvDataOG[originalURI] );
-                var urlToCheck = removeTrailingSlash( urlToCheck );
-                var uriArray = urlToCheck.replace(/\/\s*$/,'').split('/');
-                var finalNewURI = uriArray.slice(-1)[0];
-                if( finalNewURI == value['parentPage'] ) {
-                    var data = {
-                		'action': 'parse_url_content',
-                		'url_to_parse': website_url + csvDataOG[originalURI],
-                	};
-                	$.post(ajax_object.ajax_url, data, function(data) {
-                        parsePostContent(data, csvDataOG, contentSelectors, website_url, csvDataOG[originalURI], csvDataOG[newURI], index, postType, true);
-                	});
-                }
+            var data = {
+                'action': 'parse_url_content',
+                'url_to_parse': website_url + value[originalURI],
+            };
+            $.post(ajax_object.ajax_url, data, function(data) {
+                parsePostContent(data, value, contentSelectors, website_url, value[originalURI], value[newURI], index, postType, false);
             });
         });
-
-        // $.each( csvData, function(index, value){
-        //     var data = {
-        // 		'action': 'parse_url_content',
-        // 		'url_to_parse': website_url + value[originalURI],
-        // 	};
-        // 	$.post(ajax_object.ajax_url, data, function(data) {
-        //         // parsePostContent(data, value, contentSelectors, website_url, value[originalURI], value[newURI], index, postType, false);
-        // 	});
-        // });
     });
 
-    function parsePostContent(data, url, contentSelectors, website_url, originalURI, newURI, index, postType, parentTaskBool){
+    function parsePostContent(data, url, contentSelectors, website_url, originalURI, newURI, index, postType){
 
-        // Add slug as the last source in url string
 
-        // Set page parent to parent ID based on associative array and 2nd to last source
 
         var totalCount = csvData.length;
         var html = $(data);
@@ -162,6 +141,7 @@
             var post_date_raw = $(contentSelectors.date, html).text();
         } else {
             var post_date_raw = '';
+
         }
 
         if( typeof(newURI) != "undefined" ) {
@@ -215,69 +195,61 @@
         if( post_content.length <= 0 ) {
             processErrors += 'Post Content Not Found.'
         }
+        console.log(post_title);
 
         if( post_title.length <= 0 ) {
             processErrors += '<br />Post Title Not Found.'
         }
 
-        if( parentTaskBool ===false ) {
-            var isParent = false;
-            $.each( uniqueParentTaskArray, function(index, value){
-               if( finalNewURI == value['parentPage'] ) {
-                   isParent = true;
-               }
-           });
-            if( isParent === false ) {
-                createPost(newSlug, post_array, index + 3, totalCount, processErrors, postType, parentTaskBool);
+        if( typeof(post_date) != "undefined" ) {
+            if( post_date.length <= 0 ) {
+                processErrors += '<br />Post Date Not Found.'
             }
-        }else{
-            createPost(newSlug, post_array, index + 3, totalCount, processErrors, postType, parentTaskBool);
         }
 
+        createPost(newSlug, post_array, index + 3, totalCount, processErrors, postType);
 
         processErrors = '';
     }
 
     var createdPostID = ''
-    function createPost(newSlug, post_array, realIndex, totalCountCSV, processErrors, postType, parentTaskBool){
+    function createPost(newSlug, post_array, realIndex, totalCountCSV, processErrors, postType){
         var createPost = new XMLHttpRequest();
         createPost.open("POST", ajax_object.siteURL + "/wp-json/wp/v2/" + postType);
         createPost.setRequestHeader("X-WP-Nonce", ajax_object.nonce);
         createPost.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
-        if( parentTaskBool === false ) {
-            // if url has parent
-            var uriArray = newSlug.replace(/\/\s*$/,'').split('/');
-            uriArray.shift();
-            if( uriArray.length > 1 ) {
-                if( uriArray.length == 2 ) {
-                    var parentToFind = uriArray[0];
-                }else{
-                    var parentToFind = uriArray[uriArray.length - 2];
-                }
-                $.each( uniqueParentTaskArray, function(index, value){
-                   if( parentToFind == value['parentPage'] ) {
-                       var parentID = value['parentID'];
-
-                       post_array['parent'] = parentID;
-                   }
-                });
-            }
-        }
         createPost.send(JSON.stringify(post_array));
         createPost.onreadystatechange = function() {
-          if (createPost.readyState == 4) {
-            if (createPost.status == 201) {
+            if (createPost.readyState == 4) {
+                if (createPost.status == 201) {
                     var successResponse = JSON.parse(createPost.response);
 
-                    if( parentTaskBool === true ) {
+                    if( typeof(newSlug) != "undefined" ) {
+                        if( newSlug.length > 0 ) {
+                            var newSlugClean = removeTrailingSlash( newSlug );
+                            newSlugClean = removeLeadingSlash( newSlug );
+                        }
+                    }
 
-                        $.each( uniqueParentTaskArray, function(index, value){
-                           if( post_array['slug'] == value['parentPage'] ) {
-                               value['parentID'] = successResponse.id;
-                           }
-                        });
-                   }
-                    // console.log(successResponse);
+                    var uriArray = newSlugClean.replace(/\/\s*$/,'').split('/');
+                    var parentToFind = '';
+                    if( uriArray.length > 1 ) {
+                        if( uriArray.length == 2 ) {
+                            var parentToFind = uriArray[0];
+                        }else{
+                            var parentToFind = uriArray.slice(-1)[0];
+                        }
+                    }
+
+                    $.each(uniqueParentTaskArray, function(index, value){
+                        if( parentToFind == value['parentPage'] ) {
+                            uniqueParentTaskArray[index]['children'].push( successResponse.id );
+                        }
+                        if( post_array.slug == value['parentPage'] ) {
+                            uniqueParentTaskArray[index]['parentID'] = successResponse.id;
+                        }
+                    });
+
                     var percentDone = ((realIndex / totalCountCSV) * 40) + 60;
                     var previousPercent = $('.main-column .status-bar').attr('data-percent');
                     if( percentDone > previousPercent ) {
@@ -290,27 +262,36 @@
                         $('.main-column .results-list').append('<br /><h2 style="color: #18b118">Import Complete</h2>');
                     }
 
-                  $('.main-column .results-list').append('Successfully Created Post: ' + successResponse.title.raw + '<br />Post ID: ' + successResponse.id + '<br />');
-                if( processErrors.length > 0 ) {
-                    $('.main-column .results-list').append('<div class="errors">' + processErrors + '</div>');
+                    if( post_array.slug !== successResponse.slug ) {
+                        processErrors += 'Page slug has been altered from initial input.<br />'
+                    }
+
+                    $('.main-column .results-list').append('Successfully Created Post: ' + successResponse.title.raw + '<br />Post ID: ' + successResponse.id + '<br />');
+                    if( processErrors.length > 0 ) {
+                        $('.main-column .results-list').append('<div class="errors">' + processErrors + '</div>');
+                    }
+                    $('.main-column .results-list').append('<a href="' + ajax_object.siteURL + '/wp-admin/post.php?post=' + successResponse.id + '&action=edit" target="_blank" class="edit-link">Edit</a> <a href="' + successResponse.link + '" class="view-link" target="_blank">View</a> <br /><br />');
+                    var data = {
+                        'action': 'add_yoast_content',
+                        'YoastPostID' : successResponse.id,
+                        'YoastPost_title' : post_array.meta_title,
+                        'YoastPost_desc' : post_array.meta_description
+                    };
+                    // $.post(ajax_object.ajax_url, data, function(response) {
+                    // parsePostContent(response);
+                    // });
+
+                    updatePagesWithParent(postType);
+
+                    return successResponse.id;
+                } else {
+                    // $('.main-column .results-list').append('<div class="errors">Error: ' + createPost.response + '</div><br /><br />');
                 }
-                  $('.main-column .results-list').append('<a href="' + ajax_object.siteURL + '/wp-admin/post.php?post=' + successResponse.id + '&action=edit" target="_blank" class="edit-link">Edit</a> <a href="' + successResponse.link + '" class="view-link" target="_blank">View</a> <br /><br />');
-                  var data = {
-              		'action': 'add_yoast_content',
-                    'YoastPostID' : successResponse.id,
-                    'YoastPost_title' : post_array.meta_title,
-                    'YoastPost_desc' : post_array.meta_description
-              	};
-              	// $.post(ajax_object.ajax_url, data, function(response) {
-                      // parsePostContent(response);
-              	// });
-                return successResponse.id;
-            } else {
-                // $('.main-column .results-list').append('<div class="errors">Error: ' + createPost.response + '</div><br /><br />');
             }
-          }
         }
     }
+
+    console.log(uniqueParentTaskArray);
 
     function removeTrailingSlash( url ) {
         return url.replace(/\/$/, "");
@@ -328,6 +309,31 @@
             }
         }
         return unique_array
+    }
+
+    function updatePagesWithParent(postType) {
+        $.each( uniqueParentTaskArray, function(index,value) {
+            var parentItemID = value['parentID'];
+            $.each( value['children'], function(index,value) {
+                var post_array = {
+                    'parent' : parentItemID
+                }
+                // update this page: value with this parent id: parentItemID
+                var createPost = new XMLHttpRequest();
+                createPost.open("POST", ajax_object.siteURL + "/wp-json/wp/v2/" + postType + '/' + value );
+                createPost.setRequestHeader("X-WP-Nonce", ajax_object.nonce);
+                createPost.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+                createPost.send(JSON.stringify(post_array));
+                createPost.onreadystatechange = function() {
+                    if (createPost.readyState == 4) {
+                        if (createPost.status == 201) {
+                            var successResponse = JSON.parse(createPost.response);
+                            console.log(successResponse);
+                        }
+                    }
+                }
+            });
+        });
     }
 
 })( jQuery );
