@@ -8,7 +8,8 @@
     var csvData = '';
     var totalCount = '';
     var processErrors = '';
-    $('.jroy-button').click(function(){
+    $('body').on('submit', '.main-column form', function(e) {
+        e.preventDefault();
         $('.main-column input[type=file]').parse({
             config: {
                 // base config to use for each file
@@ -23,10 +24,10 @@
                         }
                     }
 
+                    // Load settings view
                     $('.main-column').html('');
                     $('.main-column').load(ajax_object.pluginURL + "view/settings.html");
-
-
+                        
                     setTimeout(function(){
                         $.each( spreadsheetHeaders, function(key, value){
                             var selected = '';
@@ -52,6 +53,16 @@
                             });
                         }
                     }, 200);
+                    
+                    // Fill any fields with previously entered data
+                    setTimeout(function(){
+                        var bulk_settings = JSON.parse(getCookie('bulk-settings'));
+                        if( bulk_settings ) {
+                            $('.form-control').each(function(){
+                                $(this).val(bulk_settings[$(this).attr('name')]);
+                            });
+                        }
+                    }, 200);
                 }
             },
             before: function(file, inputElem){
@@ -62,10 +73,18 @@
             }
         });
 
-
     });
-
-    $('body').on('click', '.generate-button', function() {
+    $('body').on('submit', '.settings-view form', function(e) {
+        e.preventDefault();
+        
+        // Set each value into a cookie for easy re-entry of data
+        var cookieObject = {};
+        $('.form-control').each(function(){
+            cookieObject[$(this).attr('name')] = $(this).val();
+        });
+        var cookieObjectJSON = JSON.stringify(cookieObject);
+        setCookie('bulk-settings', cookieObjectJSON, 90);
+        
         $('.main-column').load(ajax_object.pluginURL + "view/results.html");
         var title = $('.settings-view .selector-title').val();
         var content = $('.settings-view .selector-content').val();
@@ -115,34 +134,29 @@
 
     function parsePostContent(data, url, contentSelectors, website_url, originalURI, newURI, index, postType){
 
-
-
+        // Update progress bar
         var totalCount = csvData.length;
+        var percentDone = ((index + 3) / totalCount) * 60;
+        var previousPercent = $('.main-column .status-bar').attr('data-percent');
+        if( percentDone > previousPercent ) {
+            $('.main-column .status-bar').css({'width' : percentDone + '%'});
+            $('.main-column .status-bar').attr('data-percent', percentDone);
+        }
+        if( percentDone == 60 ) {
+            $('.main-column .status-processing').html('Creating Posts/Pages...');
+            $('.main-column .results-list').append('<h2>Results: </h2>');
+        }
+        
         var html = $(data);
         var contentArea = $('.main-column');
-        if( $(contentSelectors.title, html).length > 0 ) {
-            var post_title = $(contentSelectors.title, html).text();
-        }else{
-            var post_title = url;
-        }
-
-
-        if( $(contentSelectors.content, html).length > 0 ) {
-            var post_content = $(contentSelectors.content, html).html();
-        }else{
-            var post_content = '';
-        }
-
-
-        var featured_image = $('.post-content img', html).attr('src');
-        var meta_title = html.filter('title').text();
-        var meta_description = html.filter('meta[name=description]').attr('content');
-        if( $(contentSelectors.date, html).length > 0 ) {
-            var post_date_raw = $(contentSelectors.date, html).text();
-        } else {
-            var post_date_raw = '';
-
-        }
+        
+        // Set fallback values if empty or not found
+        var post_title = $(contentSelectors.title, html).length > 0 ? $(contentSelectors.title, html).text() : url;
+        var post_slug = website_url;
+        var post_content = $(contentSelectors.content, html).length > 0 ? $(contentSelectors.content, html).html() : '';
+        var post_date_raw = $(contentSelectors.date, html).length > 0 ? $(contentSelectors.date, html).text() : '';
+        var meta_title = html.filter('title').length > 0 ? html.filter('title').text() : '';
+        var meta_description = html.filter('meta[name=description]').length > 0 ? html.filter('meta[name=description]').attr('content') : '';
 
         if( typeof(newURI) != "undefined" ) {
             if( newURI.length > 0 ) {
@@ -168,34 +182,9 @@
             }
         }
 
-        var post_slug = website_url;
-
-        var post_array = {
-            'title' : post_title,
-            'content' : post_content,
-            'date' : post_date,
-            'slug' : finalNewURI,
-            'status' : 'publish',
-            'meta_title' : meta_title,
-            'meta_description' : meta_description
-        };
-
-        var percentDone = ((index + 3) / totalCount) * 60;
-        var previousPercent = $('.main-column .status-bar').attr('data-percent');
-        if( percentDone > previousPercent ) {
-            $('.main-column .status-bar').css({'width' : percentDone + '%'});
-            $('.main-column .status-bar').attr('data-percent', percentDone);
-        }
-
-        if( percentDone == 60 ) {
-            $('.main-column .status-processing').html('Creating Posts/Pages...');
-            $('.main-column .results-list').append('<h2>Results: </h2>');
-        }
-
         if( post_content.length <= 0 ) {
             processErrors += 'Post Content Not Found.'
         }
-        console.log(post_title);
 
         if( post_title.length <= 0 ) {
             processErrors += '<br />Post Title Not Found.'
@@ -207,6 +196,15 @@
             }
         }
 
+        var post_array = {
+            'title' : post_title,
+            'content' : post_content,
+            'date' : post_date,
+            'slug' : finalNewURI,
+            'status' : 'publish',
+            'meta_title' : meta_title,
+            'meta_description' : meta_description
+        };
         createPost(newSlug, post_array, index + 3, totalCount, processErrors, postType);
 
         processErrors = '';
@@ -263,7 +261,7 @@
                     }
 
                     if( post_array.slug !== successResponse.slug ) {
-                        processErrors += 'Page slug has been altered from initial input.<br />'
+                        processErrors += '<br />Page slug has been altered from initial input.<br />'
                     }
 
                     $('.main-column .results-list').append('Successfully Created Post: ' + successResponse.title.raw + '<br />Post ID: ' + successResponse.id + '<br />');
@@ -335,5 +333,35 @@
             });
         });
     }
+    
+    function setCookie(name, value, days) {
+    var expires;
+
+    if (days) {
+        var date = new Date();
+        date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+        expires = "; expires=" + date.toGMTString();
+    } else {
+        expires = "";
+    }
+    document.cookie = encodeURIComponent(name) + "=" + encodeURIComponent(value) + expires + "; path=/";
+}
+
+function getCookie(name) {
+    var nameEQ = encodeURIComponent(name) + "=";
+    var ca = document.cookie.split(';');
+    for (var i = 0; i < ca.length; i++) {
+        var c = ca[i];
+        while (c.charAt(0) === ' ')
+            c = c.substring(1, c.length);
+        if (c.indexOf(nameEQ) === 0)
+            return decodeURIComponent(c.substring(nameEQ.length, c.length));
+    }
+    return null;
+}
+
+function eraseCookie(name) {
+    createCookie(name, "", -1);
+}
 
 })( jQuery );

@@ -1,49 +1,57 @@
 <div class="settings-view">
-    <h2>CSV Settings:</h2>
+    <form name="generate-pages" action="">
+        <h2>Map CSV Columns:</h2>
 
-    <label>Choose Original URI Column (doesn't include domain name): </label><br />
-    <select class="header-select original-uri">
-        <option value="">Select a column</option>
-    </select>
+        <label>Choose Original URI Column (doesn't include domain name): </label><br />
+        <select class="header-select original-uri form-control" name="oguri" required>
+            <option value="">Select a column</option>
+        </select>
 
-    <br />
+        <br />
 
-    <label>Choose New URI Column (doesn't include domain name): </label><br />
-    <select class="header-select new-uri">
-        <option value="">Select a column</option>
-    </select>
+        <label>Choose New URI Column (doesn't include domain name): </label><br />
+        <select class="header-select new-uri form-control" name="newuri">
+            <option value="">Select a column</option>
+        </select>
 
-    <br />
+        <br />
 
-    <h2>Content Settings:</h2>
+        <h2>Content Settings:</h2>
 
-    <label>Current Website URL (as seen in google index/move-map): </label><br />
-    <input type="text" class="website-url" value="http://fulfilltopia.com" />
+        <label>Current Website URL (as seen in google index): </label><br />
+        <input type="text" class="website-url form-control" name="website-url" value="" required />
 
-    <br />
+        <br />
 
-    <label>Choose Post Type: </label><br />
-    <select name="post_type">
-        <option value="posts">Post</option>
-        <option value="pages" selected>Page</option>
-    </select>
+        <label>Choose Post Type: </label><br />
+        <select name="post_type" class="form-control">
+            <option value="posts">Post</option>
+            <option value="pages" selected>Page</option>
+        </select>
 
-    <br />
+        <br />
 
-    <label>Selector for Title:</label><br />
-    <input type="text" class="selector-title" value="h1" />
+        <label>Selector for Title:</label><br />
+        <input type="text" class="selector-title form-control" name="title-selector" value="h1" />
 
-    <br />
+        <br />
 
-    <label>Selector for content:</label><br />
-    <input type="text" class="selector-content" value=".entry-content" />
+        <label>Selector for content:</label><br />
+        <input type="text" class="selector-content form-control" name="content-selector" value=".entry-content" />
 
-    <br />
+        <br />
 
-    <label>Selector for date:</label><br />
-    <input type="text" class="selector-date" value=".post-meta time" />
+        <label>Selector for date:</label><br />
+        <input type="text" class="selector-date form-control" name="date-selector" value=".post-meta time" />
 
-    <br />
+        <br />
+        
+        <label>Remove style attribute from tags?</label>
+        <input type="checkbox" class="remove-style form-control" name="remove-style" checked />
 
-    <button class="generate-button button button-primary">Generate Pages</button>
+        <br />
+        <br />
+
+        <button class="generate-button button button-primary">Generate Pages</button>
+    </form>
 </div>

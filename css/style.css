@@ -6,6 +6,11 @@ label, input, select{
     margin-bottom: 10px;
 }
 
+input[type="checkbox"]{
+    margin-left: 4px;
+    margin-top: 2px;
+}
+
 button{
     margin-top: 10px;
 }
