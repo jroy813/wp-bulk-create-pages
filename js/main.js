@@ -93,6 +93,11 @@
         var originalURI = $('.settings-view .original-uri').val();
         var newURI = $('.settings-view .new-uri').val();
         var postType = $('.settings-view [name="post_type"]').val();
+        var remove_style = $('.settings-view [name="remove-style"]').is(':checked') ? true : false;
+        
+        var htmlOptions = {
+            'remove_style' : remove_style
+        }
 
         var contentSelectors = {
             'title' : title,
@@ -104,35 +109,40 @@
         var parentTaskArray = [];
         $.each( csvData, function(index, value){
             var ogURI = removeTrailingSlash(value[originalURI]);
-            var uriArray = ogURI.replace(/\/\s*$/,'').split('/');
-            uriArray.shift();
-            if( uriArray.length > 1 ) {
-                // If url has 2 slashes grab the 2nd to last source add into Array
-                if( uriArray.length == 2 ) {
-                    var parentPage = uriArray[0];
-                } else {
-                    var parentPage = uriArray[uriArray.length - 2];
+            if( ogURI !=='' ) {
+                var uriArray = ogURI.replace(/\/\s*$/,'').split('/');
+                uriArray.shift();
+                if( uriArray.length > 1 ) {
+                    // If url has 2 slashes grab the 2nd to last source add into Array
+                    if( uriArray.length == 2 ) {
+                        var parentPage = uriArray[0];
+                    } else {
+                        var parentPage = uriArray[uriArray.length - 2];
+                    }
+                    var childrenArray = [];
+                    parentTaskArray.push( {parentPage:parentPage, children:childrenArray} );
                 }
-                var childrenArray = [];
-                parentTaskArray.push( {parentPage:parentPage, children:childrenArray} );
+            }else{
+                csvData.splice(index,1);
             }
         });
 
         uniqueParentTaskArray = removeDuplicates( parentTaskArray );
+        console.log('Parent Task Array: ');
         console.log(uniqueParentTaskArray);
-
+        
         $.each( csvData, function(index, value){
             var data = {
                 'action': 'parse_url_content',
                 'url_to_parse': website_url + value[originalURI],
             };
             $.post(ajax_object.ajax_url, data, function(data) {
-                parsePostContent(data, value, contentSelectors, website_url, value[originalURI], value[newURI], index, postType, false);
+                parsePostContent(data, value, contentSelectors, website_url, value[originalURI], value[newURI], index, postType, false, htmlOptions);
             });
         });
     });
 
-    function parsePostContent(data, url, contentSelectors, website_url, originalURI, newURI, index, postType){
+    function parsePostContent(data, url, contentSelectors, website_url, originalURI, newURI, index, postType, htmlOptions){
 
         // Update progress bar
         var totalCount = csvData.length;
@@ -149,6 +159,11 @@
         
         var html = $(data);
         var contentArea = $('.main-column');
+        
+        // Clean HTML based on selected options
+        if( htmlOptions.remove_style ) {
+            // html.filter('title')
+        }
         
         // Set fallback values if empty or not found
         var post_title = $(contentSelectors.title, html).length > 0 ? $(contentSelectors.title, html).text() : url;
@@ -254,7 +269,6 @@
                         $('.main-column .status-bar').css({'width' : percentDone + '%'});
                         $('.main-column .status-bar').attr('data-percent', percentDone);
                     }
-
                     if( percentDone == 100 ) {
                         $('.main-column .progress').html('<h2 style="color: #18b118">Import Complete</h2>');
                         $('.main-column .results-list').append('<br /><h2 style="color: #18b118">Import Complete</h2>');
@@ -288,8 +302,6 @@
             }
         }
     }
-
-    console.log(uniqueParentTaskArray);
 
     function removeTrailingSlash( url ) {
         return url.replace(/\/$/, "");
