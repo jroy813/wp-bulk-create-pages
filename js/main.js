@@ -1,4 +1,6 @@
 (function($) {
+    
+    // TODO: Fix order of ajax to be in order
 
     var testing = false;
     var testingCreate = false;
@@ -94,11 +96,9 @@
         var newURI = $('.settings-view .new-uri').val();
         var postType = $('.settings-view [name="post_type"]').val();
         var remove_style = $('.settings-view [name="remove-style"]').is(':checked') ? true : false;
-        
         var htmlOptions = {
             'remove_style' : remove_style
         }
-
         var contentSelectors = {
             'title' : title,
             'content' : content,
@@ -126,22 +126,31 @@
                 csvData.splice(index,1);
             }
         });
-
         uniqueParentTaskArray = removeDuplicates( parentTaskArray );
-        console.log('Parent Task Array: ');
-        console.log(uniqueParentTaskArray);
         
+        // Loop through csv rows and grab html from url
         $.each( csvData, function(index, value){
             var data = {
-                'action': 'parse_url_content',
-                'url_to_parse': website_url + value[originalURI],
+                'action': 'get_url_contents',
+                'url_to_process': website_url + value[originalURI],
             };
-            $.post(ajax_object.ajax_url, data, function(data) {
-                parsePostContent(data, value, contentSelectors, website_url, value[originalURI], value[newURI], index, postType, false, htmlOptions);
+            $.ajax({
+                url: ajax_object.ajax_url,
+                type: 'POST',
+                data: {
+                    'action': 'get_url_contents',
+                    'url_to_process': website_url + value[originalURI],
+                },
+                success: function( response ) {
+                    console.log(response);
+                    parsePostContent(response, value, contentSelectors, website_url, value[originalURI], value[newURI], index, postType, false, htmlOptions);
+                },
             });
         });
     });
-
+    
+    
+    // TODO: Clean arguments to one args object
     function parsePostContent(data, url, contentSelectors, website_url, originalURI, newURI, index, postType, htmlOptions){
 
         // Update progress bar
@@ -160,13 +169,14 @@
         var html = $(data);
         var contentArea = $('.main-column');
         
+        // TODO: Add clean HTML options
         // Clean HTML based on selected options
         if( htmlOptions.remove_style ) {
             // html.filter('title')
         }
         
         // Set fallback values if empty or not found
-        var post_title = $(contentSelectors.title, html).length > 0 ? $(contentSelectors.title, html).text() : url;
+        var post_title = $(contentSelectors.title, html).length > 0 ? $(contentSelectors.title, html).text() : '';
         var post_slug = website_url;
         var post_content = $(contentSelectors.content, html).length > 0 ? $(contentSelectors.content, html).html() : '';
         var post_date_raw = $(contentSelectors.date, html).length > 0 ? $(contentSelectors.date, html).text() : '';
@@ -193,7 +203,6 @@
             }else{
                 var post_date = '';
                 console.log('Date Issue: ');
-                console.log(url);
             }
         }
 
@@ -278,7 +287,7 @@
                         processErrors += '<br />Page slug has been altered from initial input.<br />'
                     }
 
-                    $('.main-column .results-list').append('Successfully Created Post: ' + successResponse.title.raw + '<br />Post ID: ' + successResponse.id + '<br />');
+                    $('.main-column .results-list').append('<strong>Successfully Created Post:</strong> ' + successResponse.title.raw + '<br /><strong>Post ID:</strong> ' + successResponse.id + '<br /><strong>Post Slug:</strong> ' + successResponse.slug + '<br />');
                     if( processErrors.length > 0 ) {
                         $('.main-column .results-list').append('<div class="errors">' + processErrors + '</div>');
                     }
@@ -289,6 +298,10 @@
                         'YoastPost_title' : post_array.meta_title,
                         'YoastPost_desc' : post_array.meta_description
                     };
+                    
+                    console.log('Post ID:')
+                    console.log(successResponse.id);
+                    console.log(post_array);
                     // $.post(ajax_object.ajax_url, data, function(response) {
                     // parsePostContent(response);
                     // });

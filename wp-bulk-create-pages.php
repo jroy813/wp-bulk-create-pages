@@ -28,12 +28,12 @@ function generate_page_content() {
 }
 
 
-add_action( 'wp_ajax_parse_url_content', 'parse_url_content' );
-function parse_url_content() {
+add_action( 'wp_ajax_get_url_contents', 'get_url_contents' );
+function get_url_contents() {
     if ( isset($_REQUEST) ) {
-        $url_to_parse = $_REQUEST['url_to_parse'];
-        if ( !empty($url_to_parse) ) {
-            $html = file_get_contents($url_to_parse);
+        $url_to_process = $_REQUEST['url_to_process'];
+        if ( !empty($url_to_process) ) {
+            $html = file_get_contents($url_to_process);
             echo $html;
         }
     }
