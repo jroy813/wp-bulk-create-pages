@@ -143,6 +143,7 @@
                 data: pass_data,
                 success: function( data ) {
                     parsePostContent(data, csvData[counter], contentSelectors, website_url, csvData[counter][originalURI], csvData[counter][newURI], counter, postType, false, htmlOptions);
+                    
                     counter++;
                     if( counter < csvData.length ) {
                         recursively_ajax();
@@ -291,7 +292,7 @@
                         processErrors += '<br />Page slug has been altered from initial input.<br />'
                     }
 
-                    $('.main-column .results-list').append('<strong>Successfully Created Post:</strong> ' + successResponse.title.raw + '<br /><strong>Post ID:</strong> ' + successResponse.id + '<br /><strong>Post Slug:</strong> ' + successResponse.slug + '<br />');
+                    $('.main-column .results-list').append(realIndex + '.<br /><strong>Successfully Created Post:</strong> ' + successResponse.title.raw + '<br /><strong>Post ID:</strong> ' + successResponse.id + '<br /><strong>Post Slug:</strong> ' + successResponse.slug + '<br />');
                     if( processErrors.length > 0 ) {
                         $('.main-column .results-list').append('<div class="errors">' + processErrors + '</div>');
                     }
@@ -303,9 +304,6 @@
                         'YoastPost_desc' : post_array.meta_description
                     };
                     
-                    console.log('Post ID:')
-                    console.log(successResponse.id);
-                    console.log(post_array);
                     // $.post(ajax_object.ajax_url, data, function(response) {
                     // parsePostContent(response);
                     // });

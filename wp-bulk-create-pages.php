@@ -33,12 +33,24 @@ function get_url_contents() {
     if ( isset($_REQUEST) ) {
         $url_to_process = $_REQUEST['url_to_process'];
         if ( !empty($url_to_process) ) {
-            $html = file_get_contents($url_to_process);
-            echo $html;
+            // $html = file_get_contents($url_to_process);
+            //echo $html;
+            $ch = curl_init();
+            $curlConfig = array(
+                CURLOPT_URL            => $url_to_process,
+                CURLOPT_POST           => true,
+                CURLOPT_RETURNTRANSFER => true,
+            );
+            curl_setopt_array($ch, $curlConfig);
+            $result = curl_exec($ch);
+            curl_close($ch);
+            
+            echo $result;
         }
     }
   wp_die();
 }
+
 
 add_action( 'wp_ajax_add_yoast_content', 'add_yoast_content' );
 function add_yoast_content() {
