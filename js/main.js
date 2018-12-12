@@ -129,6 +129,26 @@
         uniqueParentTaskArray = removeDuplicates( parentTaskArray );
         
         // Loop through csv rows and grab html from url
+        var counter=0;
+         function recursively_ajax() {
+        var pass_data=5;
+        var chartMenu=['VTR','NC','RC','TOCU','TOCO','TR','COA','MP'];
+        $.ajax({
+                type:"POST",
+                async:false, // set async false to wait for previous response
+                url: "url to server",
+                dataType:"json",
+                data:{dataMenu:pass_data},
+                success: function( data ) {
+                    counter++;
+                    if( counter < chartMenu.length ) {
+                        recursively_ajax();
+                    }
+                }
+            });
+         }      
+         recursively_ajax();   
+ 
         var ajaxurl = ajax_object.ajax_url;
         function recursivePost(ajaxurl, csvData) {
           var dfd = $.Deferred();
