@@ -134,18 +134,16 @@
           var dfd = $.Deferred();
           var total = csvData.length;
           var chunk = csvData.splice(0, 10);
-          var payload = {
-              'action': 'get_url_contents',
-              'url_to_process': website_url + value[originalURI],
-          }
+          var payload = {}
                     
           payload.csvData = chunk;
           payload.remaining = total - chunk.length;
                     
-          $.post(ajaxurl, payload)
+          $.ajax(ajaxurl, payload)
             .success(function (response) {
                             
               // updateProgressBar(chunk.length);
+              console.log(chunk.length);
                                 
               if (response.status == 'complete') {
                 dfd.resolve(response);
