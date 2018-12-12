@@ -129,24 +129,39 @@
         uniqueParentTaskArray = removeDuplicates( parentTaskArray );
         
         // Loop through csv rows and grab html from url
-        $.each( csvData, function(index, value){
-            var data = {
-                'action': 'get_url_contents',
-                'url_to_process': website_url + value[originalURI],
-            };
-            $.ajax({
-                url: ajax_object.ajax_url,
-                type: 'POST',
-                data: {
-                    'action': 'get_url_contents',
-                    'url_to_process': website_url + value[originalURI],
-                },
-                success: function( response ) {
-                    console.log(response);
-                    parsePostContent(response, value, contentSelectors, website_url, value[originalURI], value[newURI], index, postType, false, htmlOptions);
-                },
+        var ajaxurl = ajax_object.ajax_url;
+        function recursivePost(ajaxurl, csvData) {
+          var dfd = $.Deferred();
+          var total = csvData.length;
+          var chunk = csvData.splice(0, 10);
+          var payload = {
+              'action': 'get_url_contents',
+              'url_to_process': website_url + value[originalURI],
+          }
+                    
+          payload.csvData = chunk;
+          payload.remaining = total - chunk.length;
+                    
+          $.post(ajaxurl, payload)
+            .success(function (response) {
+                            
+              // updateProgressBar(chunk.length);
+                                
+              if (response.status == 'complete') {
+                dfd.resolve(response);
+              } else {
+                recursivePost(ajaxurl, csvData).done(function(response) {
+                  dfd.resolve(response);
+                });
+              }
+            })
+            .fail(function (response) {
+              dfd.reject(response.responseText);
             });
-        });
+                            
+          return dfd.promise();
+        }
+        recursivePost(ajaxurl, csvData);
     });
     
     
