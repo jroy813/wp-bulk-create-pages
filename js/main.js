@@ -129,57 +129,28 @@
         uniqueParentTaskArray = removeDuplicates( parentTaskArray );
         
         // Loop through csv rows and grab html from url
-        var counter=0;
+        var counter = 0;
          function recursively_ajax() {
-        var pass_data=5;
-        var chartMenu=['VTR','NC','RC','TOCU','TOCO','TR','COA','MP'];
-        $.ajax({
+            var pass_data = {
+                'action': 'get_url_contents',
+                'url_to_process': website_url + csvData[counter][originalURI],
+            };
+            $.ajax({
                 type:"POST",
-                async:false, // set async false to wait for previous response
-                url: "url to server",
-                dataType:"json",
-                data:{dataMenu:pass_data},
+                // async:false, // set async false to wait for previous response
+                url: ajax_object.ajax_url,
+                dataType : "POST",
+                data: pass_data,
                 success: function( data ) {
+                    parsePostContent(data, csvData[counter], contentSelectors, website_url, csvData[counter][originalURI], csvData[counter][newURI], counter, postType, false, htmlOptions);
                     counter++;
-                    if( counter < chartMenu.length ) {
+                    if( counter < csvData.length ) {
                         recursively_ajax();
                     }
                 }
             });
          }      
-         recursively_ajax();   
- 
-        var ajaxurl = ajax_object.ajax_url;
-        function recursivePost(ajaxurl, csvData) {
-          var dfd = $.Deferred();
-          var total = csvData.length;
-          var chunk = csvData.splice(0, 10);
-          var payload = {}
-                    
-          payload.csvData = chunk;
-          payload.remaining = total - chunk.length;
-                    
-          $.ajax(ajaxurl, payload)
-            .success(function (response) {
-                            
-              // updateProgressBar(chunk.length);
-              console.log(chunk.length);
-                                
-              if (response.status == 'complete') {
-                dfd.resolve(response);
-              } else {
-                recursivePost(ajaxurl, csvData).done(function(response) {
-                  dfd.resolve(response);
-                });
-              }
-            })
-            .fail(function (response) {
-              dfd.reject(response.responseText);
-            });
-                            
-          return dfd.promise();
-        }
-        recursivePost(ajaxurl, csvData);
+         recursively_ajax();
     });
     
     
