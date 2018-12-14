@@ -1,6 +1,6 @@
 (function($) {
-    
-    // TODO: Fix order of ajax to be in order
+    // TODO: Figure out parent pages, What if faux parent?
+    // TODO: Figure out issue with adding more than 10 pages. Why timing out or failing.
 
     var testing = false;
     var testingCreate = false;
@@ -139,7 +139,7 @@
                 type:"POST",
                 // async:false, // set async false to wait for previous response
                 url: ajax_object.ajax_url,
-                dataType : "POST",
+                dataType : "html",
                 data: pass_data,
                 success: function( data ) {
                     parsePostContent(data, csvData[counter], contentSelectors, website_url, csvData[counter][originalURI], csvData[counter][newURI], counter, postType, false, htmlOptions);
@@ -147,6 +147,8 @@
                     counter++;
                     if( counter < csvData.length ) {
                         recursively_ajax();
+                    }else{
+                        updatePagesWithParent(postType);
                     }
                 }
             });
@@ -160,13 +162,13 @@
 
         // Update progress bar
         var totalCount = csvData.length;
-        var percentDone = ((index + 3) / totalCount) * 60;
+        var percentDone = ((index + 3) / totalCount) * 10;
         var previousPercent = $('.main-column .status-bar').attr('data-percent');
         if( percentDone > previousPercent ) {
             $('.main-column .status-bar').css({'width' : percentDone + '%'});
             $('.main-column .status-bar').attr('data-percent', percentDone);
         }
-        if( percentDone == 60 ) {
+        if( percentDone == 10 ) {
             $('.main-column .status-processing').html('Creating Posts/Pages...');
             $('.main-column .results-list').append('<h2>Results: </h2>');
         }
@@ -277,7 +279,7 @@
                         }
                     });
 
-                    var percentDone = ((realIndex / totalCountCSV) * 40) + 60;
+                    var percentDone = ((realIndex / totalCountCSV) * 90) + 10;
                     var previousPercent = $('.main-column .status-bar').attr('data-percent');
                     if( percentDone > previousPercent ) {
                         $('.main-column .status-bar').css({'width' : percentDone + '%'});
@@ -304,11 +306,11 @@
                         'YoastPost_desc' : post_array.meta_description
                     };
                     
-                    // $.post(ajax_object.ajax_url, data, function(response) {
-                    // parsePostContent(response);
-                    // });
+                    $.post(ajax_object.ajax_url, data, function(response) {
+                    parsePostContent(response);
+                    });
 
-                    updatePagesWithParent(postType);
+                    // updatePagesWithParent(postType);
 
                     return successResponse.id;
                 } else {
