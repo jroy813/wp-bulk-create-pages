@@ -1,6 +1,7 @@
 (function($) {
     // TODO: Figure out parent pages, What if faux parent?
     // TODO: Figure out issue with adding more than 10 pages. Why timing out or failing.
+    // TODO: Add option to add title into post as h1
 
     var testing = false;
     var testingCreate = false;
@@ -96,8 +97,10 @@
         var newURI = $('.settings-view .new-uri').val();
         var postType = $('.settings-view [name="post_type"]').val();
         var remove_style = $('.settings-view [name="remove-style"]').is(':checked') ? true : false;
+        var add_h1 = $('.settings-view [name="add-h1"]').is(':checked') ? true : false;
         var htmlOptions = {
-            'remove_style' : remove_style
+            'remove_style' : remove_style,
+            'add_h1' : add_h1
         }
         var contentSelectors = {
             'title' : title,
@@ -162,7 +165,7 @@
 
         // Update progress bar
         var totalCount = csvData.length;
-        var percentDone = ((index + 3) / totalCount) * 10;
+        var percentDone = ((index + 1) / totalCount) * 10;
         var previousPercent = $('.main-column .status-bar').attr('data-percent');
         if( percentDone > previousPercent ) {
             $('.main-column .status-bar').css({'width' : percentDone + '%'});
@@ -177,18 +180,60 @@
         var contentArea = $('.main-column');
         
         // TODO: Add clean HTML options
-        // Clean HTML based on selected options
+        
+        // Remove HTML comments
+        $('*', html).contents().each(function() {
+            if(this.nodeType === Node.COMMENT_NODE) {
+                $(this).remove();
+            }
+        });
+        
+        $('p', html).each(function() {
+            $(this).after($(this).html() + "\r");
+            $(this).remove();
+        });
+        
+        $('img', html).each(function() {
+            // Remove style and add align classes if floated
+            if ( $(this).css('float') == 'left' ) {
+                $(this).addClass('alignleft');
+            }else if( $(this).css('float') == 'right' ) {
+                $(this).addClass('alignright');
+            }
+            $(this).removeAttr('style');
+            
+            // Change images with src /images to add url in front
+            var src_attr = $(this).attr('src');
+            if (src_attr.match("^/")) {
+                $(this).attr('src', website_url + src_attr);
+            }
+        });
+        
         if( htmlOptions.remove_style ) {
-            // html.filter('title')
+            // Remove style attibute from elements except for text-align
+            $('[style]', html).each(function() {
+                $(this).removeAttr('style');
+            });
+        }
+        
+        if( htmlOptions.add_h1 ) {
+            // Remove style attibute from elements except for text-align
+            $(contentSelectors.content, html).append('<h1>' + $(contentSelectors.title, html) + '</h1>');
+        }
+        
+        if( $(contentSelectors.content, html).length > 0 ) {
+            post_html = $(contentSelectors.content, html).html().trim();
         }
         
         // Set fallback values if empty or not found
         var post_title = $(contentSelectors.title, html).length > 0 ? $(contentSelectors.title, html).text() : '';
         var post_slug = website_url;
-        var post_content = $(contentSelectors.content, html).length > 0 ? $(contentSelectors.content, html).html() : '';
+        var post_content = $(contentSelectors.content, html).length > 0 ? post_html : '';
         var post_date_raw = $(contentSelectors.date, html).length > 0 ? $(contentSelectors.date, html).text() : '';
         var meta_title = html.filter('title').length > 0 ? html.filter('title').text() : '';
         var meta_description = html.filter('meta[name=description]').length > 0 ? html.filter('meta[name=description]').attr('content') : '';
+        
+        console.log(post_content);
 
         if( typeof(newURI) != "undefined" ) {
             if( newURI.length > 0 ) {
@@ -236,7 +281,7 @@
             'meta_title' : meta_title,
             'meta_description' : meta_description
         };
-        createPost(newSlug, post_array, index + 3, totalCount, processErrors, postType);
+        createPost(newSlug, post_array, index + 1, totalCount, processErrors, postType);
 
         processErrors = '';
     }
@@ -299,18 +344,17 @@
                         $('.main-column .results-list').append('<div class="errors">' + processErrors + '</div>');
                     }
                     $('.main-column .results-list').append('<a href="' + ajax_object.siteURL + '/wp-admin/post.php?post=' + successResponse.id + '&action=edit" target="_blank" class="edit-link">Edit</a> <a href="' + successResponse.link + '" class="view-link" target="_blank">View</a> <br /><br />');
+                    
+                    // Add in yoast meta data with ajax
                     var data = {
                         'action': 'add_yoast_content',
                         'YoastPostID' : successResponse.id,
                         'YoastPost_title' : post_array.meta_title,
                         'YoastPost_desc' : post_array.meta_description
                     };
-                    
-                    $.post(ajax_object.ajax_url, data, function(response) {
-                    parsePostContent(response);
-                    });
+                    $.post(ajax_object.ajax_url, data, function(response) {});
 
-                    // updatePagesWithParent(postType);
+                    updatePagesWithParent(postType);
 
                     return successResponse.id;
                 } else {
