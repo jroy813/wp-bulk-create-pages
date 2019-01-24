@@ -188,6 +188,13 @@
             }
         });
         
+        $('a', html).each(function() {
+            var href_attr = $(this).attr('href');
+            if (href_attr.match("^/")) {
+                $(this).attr('href', website_url + href_attr);
+            }
+        });
+        
         $('p', html).each(function() {
             $(this).after($(this).html() + "\r");
             $(this).remove();
@@ -199,6 +206,8 @@
                 $(this).addClass('alignleft');
             }else if( $(this).css('float') == 'right' ) {
                 $(this).addClass('alignright');
+            }else{
+                $(this).before('\r');
             }
             $(this).removeAttr('style');
             
