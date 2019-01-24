@@ -27,6 +27,19 @@ function generate_page_content() {
     );
 }
 
+function getHeaders($response){
+    $headers = array();
+    $header_text = substr($response, 0, strpos($response, "\r\n\r\n"));
+    foreach (explode("\r\n", $header_text) as $i => $line)
+        if ($i === 0)
+        $headers['http_code'] = $line;
+    else {
+        list($key, $value) = explode(': ', $line);
+        $headers[$key] = $value;
+    }
+    return $headers;
+}
+
 
 add_action( 'wp_ajax_get_url_contents', 'get_url_contents' );
 function get_url_contents() {
@@ -40,12 +53,37 @@ function get_url_contents() {
                 CURLOPT_URL            => $url_to_process,
                 CURLOPT_POST           => true,
                 CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_VERBOSE => 1,
+                CURLOPT_HEADER => 1,
+                CURLOPT_FAILONERROR  =>true,
+                CURLOPT_TIMEOUT => 0,
             );
             curl_setopt_array($ch, $curlConfig);
-            $result = curl_exec($ch);
-            curl_close($ch);
+            $response = curl_exec($ch);
             
-            echo $result;
+            // Then, after your curl_exec call:
+            $header_size = curl_getinfo($ch, CURLINFO_HEADER_SIZE);
+            $headers = getHeaders($response);
+            $body = substr($response, $header_size);
+
+            if (curl_error($ch)) {
+                $error_msg = curl_error($ch);
+            }
+
+            //die(print_r($headers, 1));
+
+            curl_close($ch);
+            $data = json_decode($body);
+
+            if (isset($error_msg)) {
+                echo json_encode(array(
+                    'error' => true,
+                    'curl_error' => $error_msg,
+                    'headers' => $headers
+                ));
+            } else {
+                echo json_encode(array('html' => $body));
+            }
         }
     }
   wp_die();

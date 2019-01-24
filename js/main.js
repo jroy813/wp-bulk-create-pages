@@ -142,10 +142,19 @@
                 type:"POST",
                 // async:false, // set async false to wait for previous response
                 url: ajax_object.ajax_url,
-                dataType : "html",
+                dataType : "json",
                 data: pass_data,
                 success: function( data ) {
-                    parsePostContent(data, csvData[counter], contentSelectors, website_url, csvData[counter][originalURI], csvData[counter][newURI], counter, postType, false, htmlOptions);
+                    console.log(data);
+                    if( 'error' in data ) {
+                        console.log('errors!!');
+                        console.log(data);
+                        $('.main-column').html('<strong>Please check javascript console.<br />Errors Found In Curl Request: </strong><strong style="color: red;">' + data.curl_error + '</strong>');
+                        return;
+                    }else{
+                        console.log(data);
+                        parsePostContent(data.html, csvData[counter], contentSelectors, website_url, csvData[counter][originalURI], csvData[counter][newURI], counter, postType, false, htmlOptions);
+                    }
                     
                     counter++;
                     if( counter < csvData.length ) {
